@@ -168,7 +168,7 @@ astropulse/
 | LRO LOLA DEM 128 ppd | Site elevation, slope, horizon profile, terrain mesh | https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/ |
 | LRO LOLA DEM 4 ppd | Globe layer map (elevation, slope, water ice) | https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/ |
 | MIT Imbrium LOLA mirror | Fallback DEM download | https://imbrium.mit.edu/DATA/LOLA_GDR/CYLINDRICAL/IMG/ |
-| Solar System Scope 8K Moon texture (CC BY 4.0) | Moon surface texture | https://www.solarsystemscope.com/textures/ |
+| Solar System Scope 8K Moon texture (CC BY 4.0) | Moon surface texture | https://www.solarsystemscope.com/textures/download/8k_moon.jpg |
 | timeapi.io | Live UTC time sync | https://timeapi.io |
 
 ---
@@ -251,9 +251,6 @@ Astropulse is deployed on Vercel using a Python Flask serverless configuration.
 |-----------|-------------------|
 | Sun & Earth positions | NASA/NAIF SPICE kernels (`de421.bsp`, `moon_pa_de421_1900-2050.bpc`); valid 1901–2049 |
 | Terrain elevation & slope | LRO LOLA 128 ppd DEM via HTTP Range requests (no full-file download) |
-| Surface temperature | 1-D implicit heat conduction; Hayne et al. (2017), *JGR Planets*, doi:[10.1002/2017JE005387](https://doi.org/10.1002/2017JE005387) |
-| Regolith thermophysics | Vasavada et al. (2012), doi:[10.1029/2011JE003987](https://doi.org/10.1029/2011JE003987) |
-| Water ice sublimation | Murphy & Koop (2005), doi:[10.1256/qj.04.94](https://doi.org/10.1256/qj.04.94) |
 | Lunar eclipse fraction | Disc-overlap geometry (exact analytic formula) |
 | Optical libration | Low-precision orbital elements (Meeus-style); accurate to ~0.1° |
 
@@ -278,15 +275,8 @@ All AI-generated output was reviewed, tested, and validated by the team.
 - **NASA PDS Geosciences Node (LOLA)** — https://pds-geosciences.wustl.edu
 - **MIT Imbrium LOLA Mirror** — https://imbrium.mit.edu
 - **JPL Solar System Dynamics** — https://ssd.jpl.nasa.gov
-- **Solar System Scope Moon Texture (CC BY 4.0)** — https://www.solarsystemscope.com/textures/
+- **Solar System Scope Moon Texture (CC BY 4.0)** — https://www.solarsystemscope.com/textures/download/8k_moon.jpg
 - **timeapi.io** — https://timeapi.io
-- **Three.js (MIT)** — https://threejs.org
-- **SpiceyPy (MIT)** — https://github.com/AndrewAnnex/SpiceyPy
-- **html2pdf.js (MIT)** — https://github.com/eKoopmans/html2pdf.js
-- **flatpickr (MIT)** — https://flatpickr.js.org
-- **Font Awesome Free** — https://fontawesome.com
-- **Orbitron — Google Fonts (OFL)** — https://fonts.google.com/specimen/Orbitron
-- **DSEG Font (OFL)** — https://github.com/keshikan/DSEG
 
 ---
 
