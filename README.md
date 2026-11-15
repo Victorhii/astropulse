@@ -1,6 +1,6 @@
 # 🌕 Astropulse — Lunar Landing Site Navigator
 
-> **2026 NASA Space Apps Challenge** | Category: Lunar Landing Site Navigation | Difficulty: Advanced Intermediate
+> **2026 NASA Space Apps Challenge** | Category: Lunar Landing Site Navigator | Difficulty: Advanced Intermediate
 
 Astropulse is a full-stack web application that enables rapid, data-driven evaluation of lunar landing sites. It consolidates NASA SPICE ephemerides, LRO LOLA terrain data, and a physics-based thermal model into one accessible platform — serving mission planners, educators, and the general public alike.
 
