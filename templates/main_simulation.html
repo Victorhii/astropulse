@@ -2735,8 +2735,9 @@
             const latVal = typeof earthData.one_way_latency_s === 'number'
                 ? earthData.one_way_latency_s
                 : earthData.geometric_latency_s;
-            document.getElementById('ext-latency').innerHTML =
-                `<span class="seg-num">${Number(latVal).toFixed(2)}</span><span class="seg-unit">s</span>`;
+            document.getElementById('ext-latency').innerHTML = (!earthMeshVisible || typeof latVal !== 'number' || !isFinite(latVal))
+                ? formatAnalyticalHTML('N/A')
+                : `<span class="seg-num">${Number(latVal).toFixed(2)}</span><span class="seg-unit">s</span>`;
 
             const tempVal = surfCond.temperature_K;
             document.getElementById('ext-temp').innerHTML = (typeof tempVal === 'number')
