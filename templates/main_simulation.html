@@ -2313,6 +2313,36 @@
             terrainGeo.setIndex(indices);
             terrainGeo.computeVertexNormals();
 
+            // Build 360° surrounding terrain horizon elevation profile (DEM + 3D local relief)
+            const terrainHorizon360 = new Float32Array(360);
+            for (let aIdx = 0; aIdx < 360; aIdx++) {
+                let maxEl = Array.isArray(data.horizon_profile_360)
+                    ? Number(data.horizon_profile_360[aIdx])
+                    : -90.0;
+
+                for (let rIdx = 0; rIdx <= RADIAL_RINGS; rIdx++) {
+                    const vIdx = 1 + rIdx * (ANGULAR_SEGS + 1) + aIdx;
+                    const vx = positions[vIdx * 3];
+                    const vy = positions[vIdx * 3 + 1] - meta.eye_height_m;
+                    const vz = positions[vIdx * 3 + 2];
+                    const horizDist = Math.hypot(vx, vz);
+                    if (horizDist > 0.2) {
+                        const elDeg = Math.atan2(vy, horizDist) * (180.0 / Math.PI);
+                        if (elDeg > maxEl) maxEl = elDeg;
+                    }
+                }
+                terrainHorizon360[aIdx] = maxEl;
+            }
+
+            function getTerrainHorizonElDeg(azDeg) {
+                const normAz = ((azDeg % 360) + 360) % 360;
+                const i0 = Math.floor(normAz) % 360;
+                const i1 = (i0 + 1) % 360;
+                const frac = normAz - Math.floor(normAz);
+                const interp = terrainHorizon360[i0] * (1 - frac) + terrainHorizon360[i1] * frac;
+                return Math.max(interp, terrainHorizon360[i0], terrainHorizon360[i1]);
+            }
+
             // ------------------------------------------------------------------ Custom Lunar Photometric Shader
             const sunDirVec = azElToVec3(sunData.az_deg, sunData.el_deg);
             const earthDirVec = azElToVec3(earthData.az_deg, earthData.el_deg);
@@ -2326,7 +2356,8 @@
                 uEarthIllum: { value: earthData.illuminated_fraction },
                 uHorizonTex: { value: horizonTex },
                 uExposure: { value: 1.0 },
-                uReliefBoost: { value: reliefBoost }
+                uReliefBoost: { value: reliefBoost },
+                uEarthVis: { value: 1.0 }
             };
 
             const terrainMat = new THREE.ShaderMaterial({
@@ -2430,12 +2461,13 @@
                         vec3 directLight = vec3(1.05, 1.03, 0.99) * brdf * solarScale * directVis * 2.4;
 
                         // Physical Earthshine
-                        float earthVis = smoothstep(-0.9, 1.5, uEarthDir.y);
+                        // Physical Earthshine (only when Earth is unobstructed)
+                        float earthVis = smoothstep(0.0, 1.5, uEarthDir.y) * uEarthVis;
                         float earthNdotL = max(dot(N, uEarthDir), 0.0) * 0.75 + 0.25;
                         vec3 earthShine = vec3(0.55, 0.72, 1.0) * (0.045 * uEarthIllum * earthVis * earthNdotL);
 
-                        // Indirect regolith bounce
-                        float dayFactor = clamp((uSunElDeg + 6.0) / 30.0, 0.04, 1.0);
+                        // Indirect regolith bounce (only when Sun is above local terrain)
+                        float dayFactor = clamp((uSunElDeg + 6.0) / 30.0, 0.0, 1.0) * directVis;
                         float slopeContour = 0.65 + 0.35 * N.y;
                         vec3 regolithBounce = vec3(0.032, 0.031, 0.030) * dayFactor * slopeContour;
 
@@ -2635,7 +2667,12 @@
             }
 
             const sunMeshVisible = checkBodySightline(sunCenterPos, sunPhysicalRadius, sunDirVec);
+            sunMesh.visible = sunMeshVisible;
+            coronaSprite.visible = sunMeshVisible;
             const earthMeshVisible = checkBodySightline(earthCenterPos, earthPhysicalRadius, earthDirVec);
+            earthMesh.visible = earthMeshVisible;
+            earthHaloSprite.visible = earthMeshVisible;
+            lunarUniforms.uEarthVis.value = earthMeshVisible ? 1.0 : 0.0;
 
             hudSunLos.innerHTML = sunMeshVisible
                 ? '<span class="status-pill pill-vis">IN LINE OF SIGHT</span>'
@@ -3334,12 +3371,31 @@
             }
 
             // Compute Sunlight & Direct-to-Earth (DTE) Windows across [startMs, endMs]
+            function selenographicToLocalAzEl(obsLatRad, obsLonRad, targetLatRad, targetLonRad) {
+                const dLon = targetLonRad - obsLonRad;
+                const sinObsLat = Math.sin(obsLatRad);
+                const cosObsLat = Math.cos(obsLatRad);
+                const sinTgtLat = Math.sin(targetLatRad);
+                const cosTgtLat = Math.cos(targetLatRad);
+                const cosDLon = Math.cos(dLon);
+
+                const sinEl = sinObsLat * sinTgtLat + cosObsLat * cosTgtLat * cosDLon;
+                const elDeg = Math.asin(Math.max(-1, Math.min(1, sinEl))) * (180 / Math.PI);
+
+                const east = cosTgtLat * Math.sin(dLon);
+                const north = -sinObsLat * cosTgtLat * cosDLon + cosObsLat * sinTgtLat;
+                const azDeg = (Math.atan2(east, north) * (180 / Math.PI) + 360) % 360;
+
+                return { azDeg, elDeg };
+            }
+
+            // Compute Sunlight & Direct-to-Earth (DTE) Windows occluded by surrounding terrain
+            // Compute Sunlight & Direct-to-Earth (DTE) Windows occluded by surrounding terrain
             function computeAndRenderLunarWindows(latDeg, lonDeg, startMs, endMs) {
-                const SAMPLES = 360;
+                const SAMPLES = 2400;
                 const rad = Math.PI / 180;
                 const phi = latDeg * rad;
-                const sinPhi = Math.sin(phi);
-                const cosPhi = Math.cos(phi);
+                const lonRad = lonDeg * rad;
 
                 const sunStates = [];
                 const dteStates = [];
@@ -3347,37 +3403,106 @@
                 for (let i = 0; i <= SAMPLES; i++) {
                     const tMs = startMs + ((endMs - startMs) * i) / SAMPLES;
                     const jd = tMs / 86400000 + 2440587.5;
-                    const T = (jd - 2451545.0) / 36525.0;
+                    const d = jd - 2451545.0;
+                    const T = d / 36525.0;
 
-                    // Sun selenographic coordinates
+                    // IAU/IAG 2015 Lunar Orientation Angles
+                    const E1  = (125.045 - 0.0529921 * d) * rad;
+                    const E2  = (250.089 - 0.1059842 * d) * rad;
+                    const E3  = (260.008 + 13.0120009 * d) * rad;
+                    const E4  = (176.625 + 13.3407154 * d) * rad;
+                    const E5  = (357.529 + 0.9856003 * d) * rad;
+                    const E6  = (311.589 + 26.4057084 * d) * rad;
+                    const E7  = (134.963 + 13.0649930 * d) * rad;
+                    const E8  = (276.617 + 0.3287146 * d) * rad;
+                    const E9  = (34.226  + 1.7484877 * d) * rad;
+                    const E10 = (15.134  - 0.1589763 * d) * rad;
+                    const E11 = (119.743 + 0.0036096 * d) * rad;
+                    const E12 = (239.961 + 0.1643573 * d) * rad;
+                    const E13 = (25.053  + 12.9590088 * d) * rad;
+
+                    const alpha0 = (269.9949 + 0.0031 * T
+                        - 3.8787 * Math.sin(E1) - 0.1204 * Math.sin(E2) + 0.0700 * Math.sin(E3)
+                        - 0.0172 * Math.sin(E4) + 0.0072 * Math.sin(E6) - 0.0052 * Math.sin(E10)
+                        + 0.0043 * Math.sin(E13)) * rad;
+
+                    const delta0 = (66.5392 + 0.0130 * T
+                        + 1.5419 * Math.cos(E1) + 0.0239 * Math.cos(E2) - 0.0278 * Math.cos(E3)
+                        + 0.0068 * Math.cos(E4) - 0.0029 * Math.cos(E6) + 0.0009 * Math.cos(E7)
+                        + 0.0008 * Math.cos(E10) - 0.0009 * Math.cos(E13)) * rad;
+
+                    const W = (38.3213 + 13.17635815 * d - 1.4e-12 * d * d
+                        + 3.5610 * Math.sin(E1) + 0.1208 * Math.sin(E2) - 0.0642 * Math.sin(E3)
+                        + 0.0158 * Math.sin(E4) + 0.0252 * Math.sin(E5) - 0.0066 * Math.sin(E6)
+                        - 0.0047 * Math.sin(E7) - 0.0046 * Math.sin(E8) + 0.0028 * Math.sin(E9)
+                        + 0.0052 * Math.sin(E10) + 0.0040 * Math.sin(E11) + 0.0019 * Math.sin(E12)) * rad;
+
+                    const icrfToSeleno = (x, y, z) => {
+                        const a1 = alpha0 + Math.PI * 0.5;
+                        const ca1 = Math.cos(a1), sa1 = Math.sin(a1);
+                        const x1 = x * ca1 + y * sa1;
+                        const y1 = -x * sa1 + y * ca1;
+
+                        const a2 = Math.PI * 0.5 - delta0;
+                        const ca2 = Math.cos(a2), sa2 = Math.sin(a2);
+                        const y2 = y1 * ca2 + z * sa2;
+                        const z2 = -y1 * sa2 + z * ca2;
+
+                        const cw = Math.cos(W), sw = Math.sin(W);
+                        const x3 = x1 * cw + y2 * sw;
+                        const y3 = -x1 * sw + y2 * cw;
+
+                        return {
+                            latRad: Math.asin(Math.max(-1, Math.min(1, z2))),
+                            lonRad: Math.atan2(y3, x3)
+                        };
+                    };
+
+                    // Sun J2000 ICRF unit vector + Earth-Moon parallax
                     const L0 = (280.46646 + 36000.76983 * T) % 360;
                     const M_sun = (357.52911 + 35999.05029 * T) * rad;
                     const C_sun = 1.914602 * Math.sin(M_sun) + 0.019993 * Math.sin(2 * M_sun);
-                    const lambdaSun = (L0 + C_sun) * rad;
+                    const lamSunJ2000 = (L0 + C_sun - 0.0139697 * (d / 365.25)) * rad;
+                    const eps = 23.4392911 * rad;
 
-                    // Moon mean longitude, anomaly, argument of latitude & ascending node
-                    const L_moon = (218.3165 + 481267.8813 * T) % 360;
-                    const M_moon = (134.9634 + 477198.8676 * T) * rad;
-                    const F_moon = (93.2721 + 483202.0175 * T) * rad;
-                    const D_moon = (297.8502 + 445267.1115 * T) * rad;
-                    const Omega = (125.0445 - 1934.1363 * T) * rad;
+                    const xs0 = Math.cos(lamSunJ2000);
+                    const ys0 = Math.cos(eps) * Math.sin(lamSunJ2000);
+                    const zs0 = Math.sin(eps) * Math.sin(lamSunJ2000);
 
-                    // Subsolar selenographic longitude & latitude
-                    let subSunLon = ((L0 + C_sun - L_moon - 180) % 360 + 540) % 360 - 180;
-                    const subSunLat = 1.5424 * Math.sin(lambdaSun - Omega) * rad;
-                    const subSunLonRad = subSunLon * rad;
+                    // Moon geocentric J2000 unit vector
+                    const L_m = (218.3164477 + 481267.88123421 * T) % 360;
+                    const D_m = (297.8501921 + 445267.1114034 * T) * rad;
+                    const M_m = (134.9633964 + 477198.8675055 * T) * rad;
+                    const F_m = (93.2720950 + 483202.0175233 * T) * rad;
+                    const dL_m = 6.288774 * Math.sin(M_m) + 1.274027 * Math.sin(2 * D_m - M_m)
+                               + 0.658314 * Math.sin(2 * D_m) + 0.213618 * Math.sin(2 * M_m)
+                               - 0.185116 * Math.sin(M_sun) - 0.114332 * Math.sin(2 * F_m);
+                    const lamMoonJ2000 = (L_m + dL_m - 0.0139697 * (d / 365.25)) * rad;
+                    const betaMoon = (5.128122 * Math.sin(F_m) + 0.280602 * Math.sin(M_m + F_m)
+                                    + 0.277693 * Math.sin(M_m - F_m) + 0.173237 * Math.sin(2 * D_m - F_m)) * rad;
 
-                    const sinSunElev = sinPhi * Math.sin(subSunLat) +
-                        cosPhi * Math.cos(subSunLat) * Math.cos(lonDeg * rad - subSunLonRad);
-                    sunStates.push(sinSunElev > -0.0044); // includes solar angular radius (~0.25 deg)
+                    const xmEcl = Math.cos(betaMoon) * Math.cos(lamMoonJ2000);
+                    const ymEcl = Math.cos(betaMoon) * Math.sin(lamMoonJ2000);
+                    const zmEcl = Math.sin(betaMoon);
 
-                    // Optical libration for Earth Direct-to-Earth visibility
-                    const libLon = (-6.289 * Math.sin(M_moon) - 1.274 * Math.sin(M_moon - 2 * D_moon) + 0.658 * Math.sin(2 * D_moon)) * rad;
-                    const libLat = (-6.68 * Math.sin(F_moon)) * rad;
+                    const xm = xmEcl;
+                    const ym = Math.cos(eps) * ymEcl - Math.sin(eps) * zmEcl;
+                    const zm = Math.sin(eps) * ymEcl + Math.cos(eps) * zmEcl;
 
-                    const sinEarthElev = sinPhi * Math.sin(libLat) +
-                        cosPhi * Math.cos(libLat) * Math.cos(lonDeg * rad - libLon);
-                    dteStates.push(sinEarthElev > 0);
+                    const xs = xs0 - 0.00257 * xm;
+                    const ys = ys0 - 0.00257 * ym;
+                    const zs = zs0 - 0.00257 * zm;
+                    const sNorm = Math.hypot(xs, ys, zs);
+
+                    const subSun = icrfToSeleno(xs / sNorm, ys / sNorm, zs / sNorm);
+                    const sunPos = selenographicToLocalAzEl(phi, lonRad, subSun.latRad, subSun.lonRad);
+                    const sunTerrainEl = getTerrainHorizonElDeg(sunPos.azDeg);
+                    sunStates.push(sunPos.elDeg > 0 && sunPos.elDeg > sunTerrainEl);
+
+                    const subEarth = icrfToSeleno(-xm, -ym, -zm);
+                    const earthPos = selenographicToLocalAzEl(phi, lonRad, subEarth.latRad, subEarth.lonRad);
+                    const earthTerrainEl = getTerrainHorizonElDeg(earthPos.azDeg);
+                    dteStates.push(earthPos.elDeg > 0 && earthPos.elDeg > earthTerrainEl);
                 }
 
                 function buildIntervals(boolArr) {
@@ -3743,10 +3868,7 @@
                 e.preventDefault();
                 setFov(camera.fov + (e.deltaY > 0 ? 4 : -4));
             }, { passive: false });
-            canvas.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                setFov(camera.fov + (e.deltaY > 0 ? 3 : -3));
-            }, { passive: false });
+
             fovSlider.addEventListener('input', (e) => setFov(Number(e.target.value)));
             document.getElementById('btn-reset-fov').addEventListener('click', () => setFov(42));
 
