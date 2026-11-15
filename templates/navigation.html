@@ -1,0 +1,72 @@
+<!-- Sidebar Navigation -->
+<nav id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+        <div class="hamburger-btn" id="openBtn" title="Expand Menu">
+            <i class="fa-solid fa-bars"></i>
+        </div>
+        
+        <div class="brand-section">
+            <i class="fa-solid fa-moon brand-icon"></i>
+            <span class="brand-name">Astropulse</span>
+        </div>
+        <div class="close-btn" id="closeBtn" title="Retract Menu">
+            <i class="fa-solid fa-chevron-left"></i>
+        </div>
+    </div>
+
+    <ul class="nav-links">
+        <li>
+            <a href="{{ url_for('dashboard') }}" class="{% if active_page == 'dashboard' %}active{% endif %}">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span class="link-text">Dashboard</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('comparison') }}" class="{% if active_page == 'comparison' %}active{% endif %}">
+                <i class="fa-solid fa-scale-balanced"></i>
+                <span class="link-text">Comparison</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('simulation') }}" class="{% if active_page == 'simulation' %}active{% endif %}">
+                <i class="fa-solid fa-satellite"></i>
+                <span class="link-text">Simulation</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('knowledge') }}" class="{% if active_page == 'knowledge' %}active{% endif %}">
+                <i class="fa-solid fa-book-journal-whills"></i>
+                <span class="link-text">Knowledge</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<!-- Darkening Overlay -->
+<div id="overlay" class="overlay"></div>
+
+<!-- Sidebar Interaction Logic -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const openBtn = document.getElementById('openBtn');
+        const closeBtn = document.getElementById('closeBtn');
+
+        if (sidebar && overlay && openBtn && closeBtn) {
+            function expandMenu() {
+                sidebar.classList.add('expanded');
+                overlay.classList.add('active');
+            }
+
+            function retractMenu() {
+                sidebar.classList.remove('expanded');
+                overlay.classList.remove('active');
+            }
+
+            openBtn.addEventListener('click', expandMenu);
+            closeBtn.addEventListener('click', retractMenu);
+            overlay.addEventListener('click', retractMenu);
+        }
+    });
+</script>

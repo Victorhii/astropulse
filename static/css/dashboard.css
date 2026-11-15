@@ -1,0 +1,279 @@
+:root {
+    --bg-dark: #0a1128;
+    --nav-bg: #10315c;
+    --nav-hover: rgba(79, 179, 255, 0.15);
+    --nav-active: #1e528f;
+    --text-light: #ffffff;
+    --text-muted: #8eaecf;
+    --accent: #4fb3ff;
+    
+    --sidebar-retracted: 74px;
+    --sidebar-expanded: 280px;
+}
+
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  display: block;
+}
+
+.lunar-info {
+  position: fixed;
+  bottom: 2%;
+  left: 53%;
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: none;
+  text-align: center;
+}
+
+#lunar-day-text {
+  font-family: "Microsoft YaHei", "微软雅黑", "PingFang SC", sans-serif;
+  font-weight: bold;
+  font-size: 1.8rem;
+  letter-spacing: 5px;
+  color: #e2e8f0;
+  white-space: nowrap;
+  background: transparent;
+  border: none;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+  transition: all 0.25s ease;
+}
+
+#timenow {
+  position: fixed;
+  top: 6px;
+  left: 53%;
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: none;
+  white-space: nowrap;
+
+  font-family: "Microsoft YaHei", "微软雅黑", "PingFang SC", sans-serif;
+  font-weight: bold;
+  font-size: 3rem;
+  letter-spacing: 7px;
+  color: #e2e8f0;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+  transition: all 0.25s ease;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: var(--sidebar-retracted);
+    background-color: var(--nav-bg);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sidebar.expanded {
+    width: var(--sidebar-expanded);
+}
+
+/* --- Header Section --- */
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    height: 90px;
+    padding: 0 22px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
+    white-space: nowrap;
+}
+
+.hamburger-btn {
+    cursor: pointer;
+    font-size: 1.5rem;
+    color: var(--text-light);
+    transition: color 0.2s;
+    position: absolute;
+    left: 26px; 
+}
+
+.hamburger-btn:hover {
+    color: var(--accent);
+}
+
+.sidebar.expanded .hamburger-btn {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.brand-section {
+    display: flex;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    transform: translateX(10px);
+}
+
+.sidebar.expanded .brand-section {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+}
+
+.brand-icon {
+    font-size: 1.7rem;
+    color: var(--accent);
+    margin-right: 14px;
+}
+
+.brand-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: var(--text-light);
+}
+
+.close-btn {
+    cursor: pointer;
+    font-size: 1.3rem;
+    color: var(--text-muted);
+    margin-left: auto;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, color 0.2s;
+    padding: 6px;
+}
+
+.close-btn:hover {
+    color: var(--accent);
+}
+
+.sidebar.expanded .close-btn {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* --- Navigation Items & Typography --- */
+.nav-links {
+    list-style: none;
+    padding: 24px 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Generous vertical spacing */
+}
+
+.nav-links li {
+    padding: 0 10px;
+}
+
+.nav-links a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: var(--text-muted);
+    padding: 16px 16px; /* Increased item height & footprint */
+    border-radius: 10px;
+    position: relative;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+/* Hover state */
+.nav-links a:hover {
+    background-color: var(--nav-hover);
+    color: var(--text-light);
+}
+
+.nav-links a:hover i {
+    color: var(--accent);
+}
+
+/* Active State (Dynamic page lighting) */
+.nav-links a.active {
+    background-color: var(--nav-active);
+    color: var(--text-light);
+    font-weight: 600;
+    box-shadow: inset 0 0 10px rgba(79, 179, 255, 0.15);
+}
+
+/* Accent indicator line for current active option */
+.nav-links a.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 15%;
+    height: 70%;
+    width: 4px;
+    background-color: var(--accent);
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 8px var(--accent);
+}
+
+.nav-links i {
+    font-size: 1.45rem; /* Larger icons */
+    min-width: 32px;
+    text-align: center;
+    color: var(--text-muted);
+    transition: color 0.2s, transform 0.2s;
+}
+
+.nav-links a.active i {
+    color: var(--accent);
+}
+
+.link-text {
+    opacity: 0;
+    margin-left: 14px;
+    transition: opacity 0.3s;
+    font-size: 1.2rem; /* Scaled-up readable font */
+    letter-spacing: 0.3px;
+}
+
+.sidebar.expanded .link-text {
+    opacity: 1;
+}
+
+/* --- Overlay & Content Area --- */
+.main-content {
+    margin-left: var(--sidebar-retracted);
+    padding: 40px;
+    transition: margin-left 0.3s;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: var(--sidebar-retracted);
+    width: calc(100% - var(--sidebar-retracted));
+    height: 100%;
+    background-color: rgba(4, 9, 22, 0.65);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    z-index: 999;
+}
+
+.overlay.active {
+    opacity: 1;
+    visibility: visible;
+}

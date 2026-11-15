@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparison | Astropulse</title>
+    
+    <!-- Navigation CSS (from previous step) -->
+    <style>
+        :root {
+            --bg-dark: #0a1128;
+            --nav-bg: #10315c;
+            --nav-hover: rgba(79, 179, 255, 0.15);
+            --nav-active: #1e528f;
+            --text-light: #ffffff;
+            --text-muted: #8eaecf;
+            --accent: #4fb3ff;
+            
+            --sidebar-retracted: 74px;
+            --sidebar-expanded: 280px;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- Sidebar Container --- */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: var(--sidebar-retracted);
+            background-color: var(--nav-bg);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.35);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar.expanded {
+            width: var(--sidebar-expanded);
+        }
+
+        /* --- Header Section --- */
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            height: 90px;
+            padding: 0 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+            white-space: nowrap;
+        }
+
+        .hamburger-btn {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--text-light);
+            transition: color 0.2s;
+            position: absolute;
+            left: 26px; 
+        }
+
+        .hamburger-btn:hover {
+            color: var(--accent);
+        }
+
+        .sidebar.expanded .hamburger-btn {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateX(10px);
+        }
+
+        .sidebar.expanded .brand-section {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(0);
+        }
+
+        .brand-icon {
+            font-size: 1.7rem;
+            color: var(--accent);
+            margin-right: 14px;
+        }
+
+        .brand-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            color: var(--text-light);
+        }
+
+        .close-btn {
+            cursor: pointer;
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            margin-left: auto;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, color 0.2s;
+            padding: 6px;
+        }
+
+        .close-btn:hover {
+            color: var(--accent);
+        }
+
+        .sidebar.expanded .close-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* --- Navigation Items & Typography --- */
+        .nav-links {
+            list-style: none;
+            padding: 24px 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* Generous vertical spacing */
+        }
+
+        .nav-links li {
+            padding: 0 10px;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-muted);
+            padding: 16px 16px; /* Increased item height & footprint */
+            border-radius: 10px;
+            position: relative;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        /* Hover state */
+        .nav-links a:hover {
+            background-color: var(--nav-hover);
+            color: var(--text-light);
+        }
+
+        .nav-links a:hover i {
+            color: var(--accent);
+        }
+
+        /* Active State (Dynamic page lighting) */
+        .nav-links a.active {
+            background-color: var(--nav-active);
+            color: var(--text-light);
+            font-weight: 600;
+            box-shadow: inset 0 0 10px rgba(79, 179, 255, 0.15);
+        }
+
+        /* Accent indicator line for current active option */
+        .nav-links a.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 15%;
+            height: 70%;
+            width: 4px;
+            background-color: var(--accent);
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        .nav-links i {
+            font-size: 1.45rem; /* Larger icons */
+            min-width: 32px;
+            text-align: center;
+            color: var(--text-muted);
+            transition: color 0.2s, transform 0.2s;
+        }
+
+        .nav-links a.active i {
+            color: var(--accent);
+        }
+
+        .link-text {
+            opacity: 0;
+            margin-left: 14px;
+            transition: opacity 0.3s;
+            font-size: 1.2rem; /* Scaled-up readable font */
+            letter-spacing: 0.3px;
+        }
+
+        .sidebar.expanded .link-text {
+            opacity: 1;
+        }
+
+        /* --- Overlay & Content Area --- */
+        .main-content {
+            margin-left: var(--sidebar-retracted);
+            padding: 40px;
+            transition: margin-left 0.3s;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-retracted);
+            width: calc(100% - var(--sidebar-retracted));
+            height: 100%;
+            background-color: rgba(4, 9, 22, 0.65);
+            backdrop-filter: blur(2px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 999;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        #star-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0; /* Changed from -1 so it sits above the dark body background */
+    pointer-events: none; /* Lets clicks pass through to your buttons */
+}
+
+/* Main Layout Centering */
+.comparison-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin-left: var(--sidebar-retracted); /* Respects the retracted menu width */
+    padding: 40px;
+    text-align: center;
+    position: relative;
+    z-index: 1; /* Keeps content above the stars */
+}
+
+/* Glassmorphism Content Card */
+.content-card {
+    background: rgba(16, 49, 92, 0.45); /* Uses your --nav-bg but transparent */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 60px 50px;
+    max-width: 850px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease;
+}
+
+.content-card h1 {
+    font-size: 3rem;
+    margin-top: 0;
+    margin-bottom: 24px;
+    color: var(--text-light);
+    letter-spacing: 1px;
+    text-shadow: 0 0 15px rgba(79, 179, 255, 0.3);
+}
+
+.content-card p {
+    font-size: 1.15rem;
+    line-height: 1.8;
+    color: var(--text-muted);
+    margin-bottom: 45px;
+}
+
+/* Attractive START Button */
+.start-btn {
+    background: linear-gradient(135deg, #4fb3ff, #10315c);
+    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    padding: 18px 60px;
+    border: none;
+    border-radius: 40px;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(79, 179, 255, 0.3);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.start-btn:hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 12px 35px rgba(79, 179, 255, 0.6);
+    background: linear-gradient(135deg, #64c2ff, #1e528f);
+}
+
+.start-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 5px 15px rgba(79, 179, 255, 0.4);
+}
+    </style>
+    <!-- FontAwesome for menu icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+</head>
+<body>
+    <!-- Interactive Canvas Background -->
+    <canvas id="star-canvas"></canvas>
+
+    <!-- Include your separated navigation menu -->
+    <!-- Assuming you saved the nav HTML from earlier into templates/navigation.html -->
+    {% include 'navigation.html' %} 
+
+    <!-- Main Comparison Content -->
+    <main class="comparison-container">
+        <!-- Glassmorphism card to ensure readability against stars -->
+        <div class="content-card">
+            <h1>Lunar Landing Site Comparison</h1>
+            <p>
+                Compare four distinct landing sites using precise lunar coordinates and date-time combinations to facilitate critical decision-making. Each candidate site is evaluated against significant environmental and topological criteria, powered by authentic datasets like the JPL Horizons API, LRO LOLA, and more from NASA and its agency partners.
+            </p>
+            <a href="{{ url_for('query') }}">
+                <button class="start-btn">START</button>
+            </a>
+        </div>
+    </main>
+
+    <!-- Interactive Stars JavaScript -->
+    <script>
+        const canvas = document.getElementById('star-canvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let particlesArray = [];
+
+let mouse = {
+    x: null,
+    y: null,
+    radius: 140 
+};
+
+window.addEventListener('mousemove', function(event) {
+    mouse.x = event.x;
+    mouse.y = event.y;
+});
+
+window.addEventListener('mouseout', function() {
+    mouse.x = null;
+    mouse.y = null;
+});
+
+window.addEventListener('resize', function() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    init();
+});
+
+class Particle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.baseX = x; 
+        this.baseY = y; 
+        
+        // 1. SLIGHTLY BIGGER & BRIGHTER
+        // Size range: 0.8px to 2.6px (previously 0.5px to 2.0px)
+        this.size = Math.random() * 1.8 + 0.8; 
+        
+        // Brightness / Opacity: 0.45 to 1.0 (previously 0.2 to 1.0)
+        let alpha = Math.random() * 0.55 + 0.45;
+        this.color = `rgba(255, 255, 255, ${alpha})`;
+        
+        // 2. REDUCED IDLE MOVEMENT
+        this.angle = Math.random() * Math.PI * 2;
+        this.idleSpeed = Math.random() * 0.008 + 0.003; // Decreased floating rotation speed
+        this.orbitRadius = Math.random() * 12 + 3;      // Decreased float distance (was 25)
+        
+        // Easing speed (controls how fast stars push/return without bouncing)
+        this.ease = Math.random() * 0.03 + 0.025;
+    }
+    
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+    }
+    
+    update() {
+        // 1. Calculate gentle idle target position
+        this.angle += this.idleSpeed;
+        let targetX = this.baseX + Math.cos(this.angle) * this.orbitRadius;
+        let targetY = this.baseY + Math.sin(this.angle) * this.orbitRadius;
+        
+        // 2. Mouse Repulsion target calculation
+        if (mouse.x != null && mouse.y != null) {
+            let dx = mouse.x - this.x;
+            let dy = mouse.y - this.y;
+            let distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < mouse.radius) {
+                let force = (mouse.radius - distance) / mouse.radius;
+                let forceDirectionX = dx / distance;
+                let forceDirectionY = dy / distance;
+                
+                let pushStrength = 90;
+                targetX -= forceDirectionX * force * pushStrength;
+                targetY -= forceDirectionY * force * pushStrength;
+            }
+        }
+        
+        // 3. REMOVED ELASTIC/BOUNCE EFFECT
+        // Uses smooth linear easing instead of velocity vectors so stars slide directly to their target
+        this.x += (targetX - this.x) * this.ease;
+        this.y += (targetY - this.y) * this.ease;
+        
+        // Reduced upward background drift speed (was 0.15)
+        this.baseY -= 0.06;
+        if (this.baseY < -50) {
+            this.baseY = canvas.height + 50;
+            this.y = canvas.height + 50;
+        }
+        
+        this.draw();
+    }
+}
+
+function init() {
+    particlesArray = [];
+    let numberOfParticles = (canvas.width * canvas.height) / 1600; 
+    
+    for (let i = 0; i < numberOfParticles; i++) {
+        let x = Math.random() * canvas.width;
+        let y = Math.random() * canvas.height;
+        particlesArray.push(new Particle(x, y));
+    }
+}
+
+function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < particlesArray.length; i++) {
+        particlesArray[i].update();
+    }
+    requestAnimationFrame(animate);
+}
+
+init();
+animate();
+</script>
+
+</body>
+</html>

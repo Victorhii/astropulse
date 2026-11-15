@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission Feasibility Results | Astropulse</title>
+
+    <!-- Navigation CSS (from previous step) -->
+    <style>
+        :root {
+            --bg-dark: #0a1128;
+            --nav-bg: #10315c;
+            --nav-hover: rgba(79, 179, 255, 0.15);
+            --nav-active: #1e528f;
+            --text-light: #ffffff;
+            --text-muted: #8eaecf;
+            --accent: #4fb3ff;
+            
+            --sidebar-retracted: 74px;
+            --sidebar-expanded: 280px;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- Sidebar Container --- */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: var(--sidebar-retracted);
+            background-color: var(--nav-bg);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.35);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar.expanded {
+            width: var(--sidebar-expanded);
+        }
+
+        /* --- Header Section --- */
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            height: 90px;
+            padding: 0 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+            white-space: nowrap;
+        }
+
+        .hamburger-btn {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--text-light);
+            transition: color 0.2s;
+            position: absolute;
+            left: 26px; 
+        }
+
+        .hamburger-btn:hover {
+            color: var(--accent);
+        }
+
+        .sidebar.expanded .hamburger-btn {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateX(10px);
+        }
+
+        .sidebar.expanded .brand-section {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(0);
+        }
+
+        .brand-icon {
+            font-size: 1.7rem;
+            color: var(--accent);
+            margin-right: 14px;
+        }
+
+        .brand-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            color: var(--text-light);
+        }
+
+        .close-btn {
+            cursor: pointer;
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            margin-left: auto;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, color 0.2s;
+            padding: 6px;
+        }
+
+        .close-btn:hover {
+            color: var(--accent);
+        }
+
+        .sidebar.expanded .close-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* --- Navigation Items & Typography --- */
+        .nav-links {
+            list-style: none;
+            padding: 24px 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* Generous vertical spacing */
+        }
+
+        .nav-links li {
+            padding: 0 10px;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-muted);
+            padding: 16px 16px; /* Increased item height & footprint */
+            border-radius: 10px;
+            position: relative;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        /* Hover state */
+        .nav-links a:hover {
+            background-color: var(--nav-hover);
+            color: var(--text-light);
+        }
+
+        .nav-links a:hover i {
+            color: var(--accent);
+        }
+
+        /* Active State (Dynamic page lighting) */
+        .nav-links a.active {
+            background-color: var(--nav-active);
+            color: var(--text-light);
+            font-weight: 600;
+            box-shadow: inset 0 0 10px rgba(79, 179, 255, 0.15);
+        }
+
+        /* Accent indicator line for current active option */
+        .nav-links a.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 15%;
+            height: 70%;
+            width: 4px;
+            background-color: var(--accent);
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        .nav-links i {
+            font-size: 1.45rem; /* Larger icons */
+            min-width: 32px;
+            text-align: center;
+            color: var(--text-muted);
+            transition: color 0.2s, transform 0.2s;
+        }
+
+        .nav-links a.active i {
+            color: var(--accent);
+        }
+
+        .link-text {
+            opacity: 0;
+            margin-left: 14px;
+            transition: opacity 0.3s;
+            font-size: 1.2rem; /* Scaled-up readable font */
+            letter-spacing: 0.3px;
+        }
+
+        .sidebar.expanded .link-text {
+            opacity: 1;
+        }
+
+        /* --- Overlay & Content Area --- */
+        .main-content {
+            margin-left: var(--sidebar-retracted);
+            padding: 40px;
+            transition: margin-left 0.3s;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-retracted);
+            width: calc(100% - var(--sidebar-retracted));
+            height: 100%;
+            background-color: rgba(4, 9, 22, 0.65);
+            backdrop-filter: blur(2px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 999;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        :root {
+    --bg-space: #050b18;
+    --card-bg: rgba(13, 30, 56, 0.85);
+    --card-border: rgba(79, 179, 255, 0.25);
+    --accent-cyan: #4fb3ff;
+    --text-light: #f8fafc;
+    --text-muted: #a3b3c7;
+
+    /* Vibrant Site 1-4 Palette */
+    --site1-color: #ff4d5e;
+    --site1-grad: linear-gradient(90deg, #d90429 0%, #ff4d5e 100%);
+    --site2-color: #ffbe0b;
+    --site2-grad: linear-gradient(90deg, #f77f00 0%, #ffbe0b 100%);
+    --site3-color: #06d6a0;
+    --site3-grad: linear-gradient(90deg, #059669 0%, #06d6a0 100%);
+    --site4-color: #3a86ff;
+    --site4-grad: linear-gradient(90deg, #1d4ed8 0%, #3a86ff 100%);
+}
+
+html {
+    font-size: 17px; /* Scaled base font size for effortless reading */
+}
+
+body {
+    background-color: var(--bg-space);
+    color: var(--text-light);
+    font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+}
+
+.results-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 28px 72px 104px; /* Clears left navigation menu */
+}
+
+@media (max-width: 768px) {
+    .results-container {
+        padding: 22px 16px 56px 16px;
+    }
+}
+
+/* Top Bar */
+.results-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.back-query-link {
+    color: var(--accent-cyan);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    background: rgba(13, 30, 56, 0.85);
+    border: 1px solid var(--card-border);
+    padding: 10px 18px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.back-query-link:hover {
+    background: rgba(79, 179, 255, 0.16);
+    border-color: var(--accent-cyan);
+}
+
+.thermal-badge {
+    background: rgba(6, 214, 160, 0.14);
+    border: 1px solid rgba(6, 214, 160, 0.4);
+    color: #a7f3d0;
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-size: 0.98rem;
+}
+
+/* ==================================================== */
+/* SECTION 1: MISSION FEASIBILITY STANDINGS (PODIUM)    */
+/* ==================================================== */
+.standing-section {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 22px;
+    padding: 34px;
+    margin-bottom: 26px;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+}
+
+.section-heading {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.section-heading h1 {
+    margin: 0;
+    font-size: 2.05rem;
+    letter-spacing: 1.5px;
+    color: #ffffff;
+    text-transform: uppercase;
+}
+
+.section-heading p {
+    margin: 8px 0 0;
+    color: var(--text-muted);
+    font-size: 1.02rem;
+}
+
+/* 1st Place Hero Card */
+.podium-first-card {
+    background: linear-gradient(135deg, rgba(255, 209, 102, 0.15) 0%, rgba(15, 29, 53, 0.96) 60%);
+    border: 2px solid rgba(255, 209, 102, 0.7);
+    border-radius: 18px;
+    padding: 28px 34px;
+    min-height: 136px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 22px;
+    box-shadow: 0 10px 34px rgba(255, 209, 102, 0.16);
+}
+
+@media (max-width: 900px) {
+    .podium-first-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    .podium-first-right {
+        display: none; /* Prevents extra gap on mobile */
+    }
+}
+
+.podium-first-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1; /* Balances left side */
+}
+
+.podium-first-right {
+    flex: 1; /* Balances right side so .podium-first-center stays centered */
+}
+.podium-first-center {
+    text-align: center;
+}
+
+.feasibility-score-hero {
+    font-size: 3.4rem;
+    font-weight: 800;
+    color: #ffd166;
+    line-height: 1.08;
+}
+
+.feasibility-score-hero span {
+    font-size: 1.7rem;
+    margin-left: 3px;
+}
+
+.site-coord-utc {
+    font-family: 'Consolas', monospace;
+    font-size: 1.05rem;
+    color: #f1f5f9;
+    margin-top: 8px;
+}
+
+.site-coord-utc.small {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    word-break: break-word;
+    margin-bottom: auto; /* Keeps score + coordinates centered together */
+}
+
+/* 2nd, 3rd, 4th Grid */
+.podium-sub-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+@media (max-width: 980px) {
+    .podium-sub-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.podium-sub-card {
+    background: rgba(8, 18, 36, 0.88);
+    border: 1px solid rgba(79, 179, 255, 0.25);
+    border-radius: 16px;
+    padding: 24px 22px;
+    min-height: 210px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    text-align: center;
+    gap: 12px;
+}
+
+.sub-card-top {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: auto; /* Pins medal row to top */
+}
+
+.sub-card-score {
+    font-size: 2.45rem;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.1;
+}
+
+.sub-card-score span {
+    font-size: 1.25rem;
+    color: var(--accent-cyan);
+}
+
+/* Medals & Site Pills */
+.rank-medal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.rank-medal-badge.gold { background: rgba(255, 209, 102, 0.2); color: #ffd166; border: 1px solid #ffd166; }
+.rank-medal-badge.silver { background: rgba(203, 213, 225, 0.18); color: #e2e8f0; border: 1px solid #cbd5e1; }
+.rank-medal-badge.bronze { background: rgba(217, 119, 6, 0.2); color: #fbbf24; border: 1px solid #d97706; }
+.rank-medal-badge.fourth { background: rgba(79, 179, 255, 0.16); color: #93c5fd; border: 1px solid rgba(79, 179, 255, 0.4); }
+
+.site-pill {
+    padding: 5px 12px;
+    border-radius: 7px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #050b18;
+}
+.site-pill-1 { background: var(--site1-color); color: #fff; }
+.site-pill-2 { background: var(--site2-color); }
+.site-pill-3 { background: var(--site3-color); }
+.site-pill-4 { background: var(--site4-color); color: #fff; }
+
+
+/* Site Color Key Legend */
+.site-legend-bar {
+    background: rgba(13, 30, 56, 0.78);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 16px 24px;
+    margin-bottom: 26px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px 26px;
+    font-size: 0.96rem;
+}
+
+.legend-title {
+    color: var(--accent-cyan);
+    font-weight: 700;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: #f1f5f9;
+}
+
+.legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.dot-site-1 { background: var(--site1-color); box-shadow: 0 0 8px var(--site1-color); }
+.dot-site-2 { background: var(--site2-color); box-shadow: 0 0 8px var(--site2-color); }
+.dot-site-3 { background: var(--site3-color); box-shadow: 0 0 8px var(--site3-color); }
+.dot-site-4 { background: var(--site4-color); box-shadow: 0 0 8px var(--site4-color); }
+
+/* ==================================================== */
+/* SECTION 2: CRITERIA EVALUATION CARDS                 */
+/* ==================================================== */
+.criteria-list {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+}
+
+.criteria-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 28px 30px;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+    page-break-inside: avoid;
+}
+
+.criteria-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(79, 179, 255, 0.18);
+}
+
+.criteria-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.criteria-icon {
+    color: var(--accent-cyan);
+    font-size: 1.35rem;
+}
+
+.criteria-title-group h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    color: #ffffff;
+}
+
+.criteria-title-group h2 span {
+    color: var(--accent-cyan);
+    font-weight: 500;
+    font-size: 1.12rem;
+}
+
+.criteria-meta-badges {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.threshold-tag, .weight-tag {
+    font-size: 0.88rem;
+    padding: 5px 12px;
+    border-radius: 7px;
+    font-weight: 600;
+}
+
+.threshold-tag {
+    background: rgba(148, 163, 184, 0.16);
+    color: #e2e8f0;
+}
+
+.weight-tag {
+    background: rgba(79, 179, 255, 0.18);
+    color: #7dd3fc;
+    border: 1px solid rgba(79, 179, 255, 0.35);
+}
+
+/* Two-Column Split: Left Bars | Right Why It Matters */
+.criteria-body-grid {
+    display: grid;
+    grid-template-columns: 2.2fr 1.3fr; /* Give more width to the bars column, reduce the why-column width */
+    gap: 20px;
+    align-items: center;
+}
+
+@media (max-width: 1080px) {
+    .criteria-body-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.bars-column {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    justify-content: center;
+}
+
+.site-bar-row {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.bar-row-label {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 0.95rem;
+}
+
+.site-tag {
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.84rem;
+}
+.tag-site-1 { background: var(--site1-color); color: #fff; }
+.tag-site-2 { background: var(--site2-color); color: #050b18; }
+.tag-site-3 { background: var(--site3-color); color: #050b18; }
+.tag-site-4 { background: var(--site4-color); color: #fff; }
+
+.row-coord {
+    font-family: 'Consolas', monospace;
+    color: #e2e8f0;
+}
+
+.bar-row-visual {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.axis-bound {
+    font-size: 0.88rem;
+    font-family: 'Consolas', monospace;
+    color: #cbd5e1;
+    min-width: 48px;
+    text-align: center;
+}
+
+.bar-track {
+    flex: 1;
+    height: 22px; /* Increased bar height for visual clarity */
+    background: rgba(4, 10, 24, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+}
+
+.bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fill-site-1 { background: var(--site1-grad); }
+.fill-site-2 { background: var(--site2-grad); }
+.fill-site-3 { background: var(--site3-grad); }
+.fill-site-4 { background: var(--site4-grad); }
+
+/* 0° Horizon Reference Tick for [-90°, +90°] Elevation Bars */
+.zero-tick {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.5);
+    z-index: 2;
+}
+
+/* Dual-Layer Temperature Range Gauge */
+.temp-dual-track {
+    height: 26px; /* Increased height for dual-layer thermal range bar */
+    overflow: visible;
+}
+
+.user-target-zone {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    background: rgba(79, 179, 255, 0.18);
+    border-left: 2px dashed #4fb3ff;
+    border-right: 2px dashed #4fb3ff;
+    border-radius: 5px;
+    z-index: 1;
+}
+
+.temp-range-pill {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    border-radius: 999px;
+    z-index: 2;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.65);
+}
+
+.range-site-1 { background: var(--site1-grad); border: 1px solid #fff; }
+.range-site-2 { background: var(--site2-grad); border: 1px solid #fff; }
+.range-site-3 { background: var(--site3-grad); border: 1px solid #fff; }
+.range-site-4 { background: var(--site4-grad); border: 1px solid #fff; }
+
+.target-zone-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    color: #7dd3fc;
+    background: rgba(79, 179, 255, 0.14);
+    border: 1px dashed #4fb3ff;
+    padding: 5px 12px;
+    border-radius: 7px;
+}
+
+.target-swatch {
+    width: 12px;
+    height: 12px;
+    background: rgba(79, 179, 255, 0.45);
+    border: 1px solid #4fb3ff;
+    display: inline-block;
+}
+
+.temp-status-pill {
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 5px;
+}
+.temp-status-pill.fit { background: rgba(6, 214, 160, 0.22); color: #34d399; }
+.temp-status-pill.exceed { background: rgba(255, 77, 94, 0.22); color: #fda4af; }
+
+/* Right-hand Value + Crown Box */
+.bar-value-box {
+    min-width: 225px; /* Wider column so large value text + crown never wrap */
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 9px;
+    font-size: 0.98rem;
+    font-weight: 700;
+}
+
+.bar-value-box.wide {
+    min-width: 235px;
+}
+
+.metric-val {
+    color: #ffffff;
+    font-family: 'Consolas', monospace;
+}
+
+.metric-val.na-text {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.metric-val.perpetual-text {
+    color: #34d399;
+}
+
+.crown-icon {
+    color: #ffd166;
+    font-size: 1.18rem;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 6px rgba(255, 209, 102, 0.8));
+}
+
+/* Right Column: Why It Matters? */
+.why-column {
+    border-left: 1px solid rgba(79, 179, 255, 0.22);
+    padding-left: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 13px;
+}
+
+@media (max-width: 1080px) {
+    .why-column {
+        border-left: none;
+        border-top: 1px solid rgba(79, 179, 255, 0.22);
+        padding-left: 0;
+        padding-top: 18px;
+    }
+}
+
+.why-column h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: var(--accent-cyan);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.why-column p {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.6;
+    color: #e2e8f0;
+}
+
+.analogy-box {
+    background: rgba(4, 10, 24, 0.72);
+    border-left: 4px solid #ffd166;
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 0.93rem;
+    line-height: 1.55;
+    color: #f1f5f9;
+}
+
+.analogy-box strong {
+    color: #ffd166;
+}
+
+/* ==================================================== */
+/* SECTION 3: PDF DOWNLOAD FOOTER                       */
+/* ==================================================== */
+.pdf-download-footer {
+    margin-top: 38px;
+    display: flex;
+    justify-content: center;
+}
+
+.download-pdf-btn {
+    background: linear-gradient(135deg, #059669 0%, #06d6a0 50%, #3a86ff 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 16px;
+    padding: 18px 38px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 10px 32px rgba(6, 214, 160, 0.35);
+    transition: all 0.25s ease;
+}
+
+.download-pdf-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 38px rgba(6, 214, 160, 0.55);
+}
+
+.download-pdf-btn:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+html, body {
+    overflow-y: auto !important;
+    height: auto !important;
+}
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2pdf.js for exporting full colourful report to PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+    <canvas id="star-canvas"></canvas>
+
+    <!-- Left Navigation Menu -->
+    {% include 'navigation.html' %}
+
+    <main class="results-container">
+        <!-- Top Action & Context Header -->
+        <div class="results-top-bar">
+            <a href="/query" class="back-query-link">
+                <i class="fa-solid fa-arrow-left"></i> Configure New Sites
+            </a>
+            <div class="thermal-badge">
+                <i class="fa-solid fa-temperature-half"></i>
+                Target Thermal Range: <strong>{{ report.scales.user_min_k }} K – {{ report.scales.user_max_k }} K</strong>
+            </div>
+        </div>
+
+        <!-- Exportable Colourful Report Area -->
+        <div id="report-export-area">
+
+            <!-- ==================================================== -->
+            <!-- SECTION 1: MISSION FEASIBILITY PERCENTAGE STANDINGS  -->
+            <!-- ==================================================== -->
+            <section class="standing-section">
+                <div class="section-heading">
+                    <h1>MISSION FEASIBILITY PERCENTAGE</h1>
+                    <p>Weighted multi-criteria lunar landing & rover operational suitability index</p>
+                </div>
+
+                {% set first = report.ranked_sites[0] %}
+                <!-- 1ST PLACE HERO CARD (TOP FULL-WIDTH ROW) -->
+                <div class="podium-first-card site-accent-{{ first.site_num }}">
+                    <div class="podium-first-left">
+                        <div class="rank-medal-badge gold">
+                            <i class="fa-solid fa-medal"></i>
+                            <span>1st Place</span>
+                        </div>
+                        <span class="site-pill site-pill-{{ first.site_num }}">Site {{ first.site_num }}</span>
+                    </div>
+
+                    <div class="podium-first-center">
+                        <div class="feasibility-score-hero">{{ "%.2f"|format(first.feasibility_pct) }}<span>%</span></div>
+                        <div class="site-coord-utc">{{ first.display_id }}</div>
+                    </div>
+
+                    <div class="podium-first-right"></div>
+                </div>
+
+                <!-- 2ND, 3RD, AND 4TH PLACE CARDS (3-COLUMN ROW BELOW) -->
+                <div class="podium-sub-grid">
+                    {% for site in report.ranked_sites[1:] %}
+                    {% set medal_class = 'silver' if site.rank == 2 else ('bronze' if site.rank == 3 else 'fourth') %}
+                    <div class="podium-sub-card site-accent-{{ site.site_num }}">
+                        <div class="sub-card-top">
+                            <div class="rank-medal-badge {{ medal_class }}">
+                                <i class="fa-solid {{ 'fa-medal' if site.rank <= 3 else 'fa-award' }}"></i>
+                                <span>{{ site.rank_label }}</span>
+                            </div>
+                            <span class="site-pill site-pill-{{ site.site_num }}">Site {{ site.site_num }}</span>
+                        </div>
+
+                        <div class="sub-card-score">{{ "%.2f"|format(site.feasibility_pct) }}<span>%</span></div>
+                        <div class="site-coord-utc small">{{ site.display_id }}</div>
+
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Color Key Legend for the 4 Sites -->
+            <div class="site-legend-bar">
+                <span class="legend-title"><i class="fa-solid fa-layer-group"></i> Site Color Key:</span>
+                {% for s in report.sites %}
+                <div class="legend-item">
+                    <span class="legend-dot dot-site-{{ s.site_num }}"></span>
+                    <span><strong>Site {{ s.site_num }}:</strong> {{ s.display_id }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- ==================================================== -->
+            <!-- SECTION 2: 8 CRITERIA COMPARISON & WHY IT MATTERS    -->
+            <!-- ==================================================== -->
+            <section class="criteria-list">
+
+                <!-- 1. EARTH ELEVATION ANGLE -->
+                <article class="criteria-card">
+                    <div class="criteria-card-header">
+                        <div class="criteria-title-group">
+                            <i class="fa-solid fa-satellite-dish criteria-icon"></i>
+                            <h2>1. Earth Elevation Angle <span>(°)</span></h2>
+                        </div>
+                        <div class="criteria-meta-badges">
+                            <span class="threshold-tag">Full Mark: ≥ 75.00°</span>
+                            <span class="weight-tag">Weight: {{ report.weights.earth_elevation }}%</span>
+                        </div>
+                    </div>
+                    <div class="criteria-body-grid">
+                        <div class="bars-column">
+                            {% for s in report.sites %}
+                            {% set m = s.metrics.earth_elev %}
+                            <div class="site-bar-row">
+                                <div class="bar-row-label">
+                                    <span class="site-tag tag-site-{{ s.site_num }}">Site {{ s.site_num }}</span>
+                                    <span class="row-coord">{{ s.display_id }}</span>
+                                </div>
+                                <div class="bar-row-visual">
+                                    <span class="axis-bound">-90°</span>
+                                    <div class="bar-track has-zero-tick">
+                                        <div class="zero-tick" title="0° Horizon"></div>
+                                        <div class="bar-fill fill-site-{{ s.site_num }}" style="width: {{ m.bar_pct }}%;"></div>
+                                    </div>
+                                    <span class="axis-bound">+90°</span>
+                                    <div class="bar-value-box">
+                                        <span class="metric-val">{{ m.display }}</span>
+                                        {% if m.has_crown %}
+                                        <i class="fa-solid fa-crown crown-icon" title="Highest Score in Criterion"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="why-column">
+                            <h3><i class="fa-solid fa-circle-question"></i> Why It Matters?</h3>
+                            <p>It determines whether the rover has a clear, unobstructed line-of-sight to Earth for Direct-to-Earth (DTE) radio commands and telemetry. Negative angles mean Earth is hidden below the lunar horizon.</p>
+
+                        </div>
+                    </div>
+                </article>
+
+                <!-- 2. DURATION BEFORE EARTHSET -->
+                <article class="criteria-card">
+                    <div class="criteria-card-header">
+                        <div class="criteria-title-group">
+                            <i class="fa-solid fa-hourglass-half criteria-icon"></i>
+                            <h2>2. Duration Before Earthset <span>(days / h:m:s)</span></h2>
+                        </div>
+                        <div class="criteria-meta-badges">
+                            <span class="threshold-tag">Full Mark: ≥ 14.00 d</span>
+                            <span class="weight-tag">Weight: {{ report.weights.earthset_duration }}%</span>
+                        </div>
+                    </div>
+                    <div class="criteria-body-grid">
+                        <div class="bars-column">
+                            {% for s in report.sites %}
+                            {% set m = s.metrics.earthset %}
+                            <div class="site-bar-row">
+                                <div class="bar-row-label">
+                                    <span class="site-tag tag-site-{{ s.site_num }}">Site {{ s.site_num }}</span>
+                                    <span class="row-coord">{{ s.display_id }}</span>
+                                </div>
+                                <div class="bar-row-visual">
+                                    <span class="axis-bound">0</span>
+                                    <div class="bar-track">
+                                        <div class="bar-fill fill-site-{{ s.site_num }}" style="width: {{ m.bar_pct }}%;"></div>
+                                    </div>
+                                    <span class="axis-bound">{{ report.scales.earthset_max_label }}</span>
+                                    <div class="bar-value-box">
+                                        <span class="metric-val {{ 'perpetual-text' if m.is_perpetual else ('na-text' if not m.is_valid) }}"
+                                            title="{{ m.note }}">
+                                            {{ m.display }}
+                                        </span>
+                                        {% if m.has_crown %}
+                                        <i class="fa-solid fa-crown crown-icon" title="Highest Score in Criterion"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="why-column">
+                            <h3><i class="fa-solid fa-circle-question"></i> Why It Matters?</h3>
+                            <p>It measures how long Earth remains visible in the lunar sky before dipping below the horizon. Longer windows allow uninterrupted data downloads without needing expensive lunar relay satellites. Sites showing <strong>N/A</strong> are currently in blackout waiting for Earthrise.</p>
+
+                        </div>
+                    </div>
+                </article>
+
+                <!-- 3. SOLAR ELEVATION ANGLE -->
+                <article class="criteria-card">
+                    <div class="criteria-card-header">
+                        <div class="criteria-title-group">
+                            <i class="fa-solid fa-sun criteria-icon"></i>
+                            <h2>3. Solar Elevation Angle <span>(°)</span></h2>
+                        </div>
+                        <div class="criteria-meta-badges">
+                            <span class="threshold-tag">Full Mark: ≥ 60.00°</span>
+                            <span class="weight-tag">Weight: {{ report.weights.solar_elevation }}%</span>
+                        </div>
+                    </div>
+                    <div class="criteria-body-grid">
+                        <div class="bars-column">
+                            {% for s in report.sites %}
+                            {% set m = s.metrics.solar_elev %}
+                            <div class="site-bar-row">
+                                <div class="bar-row-label">
+                                    <span class="site-tag tag-site-{{ s.site_num }}">Site {{ s.site_num }}</span>
+                                    <span class="row-coord">{{ s.display_id }}</span>
+                                </div>
+                                <div class="bar-row-visual">
+                                    <span class="axis-bound">-90°</span>
+                                    <div class="bar-track has-zero-tick">
+                                        <div class="zero-tick" title="0° Horizon"></div>
+                                        <div class="bar-fill fill-site-{{ s.site_num }}" style="width: {{ m.bar_pct }}%;"></div>
+                                    </div>
+                                    <span class="axis-bound">+90°</span>
+                                    <div class="bar-value-box">
+                                        <span class="metric-val">{{ m.display }}</span>
+                                        {% if m.has_crown %}
+                                        <i class="fa-solid fa-crown crown-icon" title="Highest Score in Criterion"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="why-column">
+                            <h3><i class="fa-solid fa-circle-question"></i> Why It Matters?</h3>
+                            <p>It controls solar panel power efficiency and terrain visibility. Very low angles (near 0°–5°, common at the lunar poles) cast razor-sharp, pitch-black shadows across craters that blind rover navigation cameras.</p>
+
+                            
+                        </div>
+                    </div>
+                </article>
+
+                <!-- 4. DURATION BEFORE SUNSET -->
+                <article class="criteria-card">
+                    <div class="criteria-card-header">
+                        <div class="criteria-title-group">
+                            <i class="fa-solid fa-clock criteria-icon"></i>
+                            <h2>4. Duration Before Sunset <span>(days / h:m:s)</span></h2>
+                        </div>
+                        <div class="criteria-meta-badges">
+                            <span class="threshold-tag">Full Mark: ≥ 14.00 d</span>
+                            <span class="weight-tag">Weight: {{ report.weights.sunset_duration }}%</span>
+                        </div>
+                    </div>
+                    <div class="criteria-body-grid">
+                        <div class="bars-column">
+                            {% for s in report.sites %}
+                            {% set m = s.metrics.sunset %}
+                            <div class="site-bar-row">
+                                <div class="bar-row-label">
+                                    <span class="site-tag tag-site-{{ s.site_num }}">Site {{ s.site_num }}</span>
+                                    <span class="row-coord">{{ s.display_id }}</span>
+                                </div>
+                                <div class="bar-row-visual">
+                                    <span class="axis-bound">0</span>
+                                    <div class="bar-track">
+                                        <div class="bar-fill fill-site-{{ s.site_num }}" style="width: {{ m.bar_pct }}%;"></div>
+                                    </div>
+                                    <span class="axis-bound">{{ report.scales.sunset_max_label }}</span>
+                                    <div class="bar-value-box">
+                                        <span class="metric-val {{ 'perpetual-text' if m.is_perpetual else ('na-text' if not m.is_valid) }}"
+                                            title="{{ m.note }}">
+                                            {{ m.display }}
+                                        </span>
+                                        {% if m.has_crown %}
+                                        <i class="fa-solid fa-crown crown-icon" title="Highest Score in Criterion"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="why-column">
+                            <h3><i class="fa-solid fa-circle-question"></i> Why It Matters?</h3>
+                            <p>It defines the rover's active daytime work shift. Once the Sun sets on the Moon, darkness lasts ~14 Earth days and temperatures plunge below 100 K, which can permanently freeze unheated electronics. Sites showing <strong>N/A</strong> are currently in lunar night awaiting Sunrise.</p>
+
+                        </div>
+                    </div>
+                </article>
+
+                <!-- 5. SOLAR IRRADIANCE -->
+                <article class="criteria-card">
+                    <div class="criteria-card-header">
+                        <div class="criteria-title-group">
+                            <i class="fa-solid fa-bolt criteria-icon"></i>
+                            <h2>5. Solar Irradiance <span>(W/m²)</span></h2>
+                        </div>
+                        <div class="criteria-meta-badges">
+                            <span class="threshold-tag">Full Mark: ≥ 1000.00 W/m²</span>
+                            <span class="weight-tag">Weight: {{ report.weights.solar_irradiance }}%</span>
+                        </div>
+                    </div>
+                    <div class="criteria-body-grid">
+                        <div class="bars-column">
+                            {% for s in report.sites %}
+                            {% set m = s.metrics.irradiance %}
+                            <div class="site-bar-row">
+                                <div class="bar-row-label">
+                                    <span class="site-tag tag-site-{{ s.site_num }}">Site {{ s.site_num }}</span>
+                                    <span class="row-coord">{{ s.display_id }}</span>
+                                </div>
+                                <div class="bar-row-visual">
+                                    <span class="axis-bound">0</span>
+                                    <div class="bar-track">
+                                        <div class="bar-fill fill-site-{{ s.site_num }}" style="width: {{ m.bar_pct }}%;"></div>
+                                    </div>
+                                    <span class="axis-bound">{{ report.scales.irr_max_label }}</span>
+                                    <div class="bar-value-box">
+                                        <span class="metric-val">{{ m.display }}</span>
+                                        {% if m.has_crown %}
+                                        <i class="fa-solid fa-crown crown-icon" title="Highest Score in Criterion"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="why-column">
+                            <h3><i class="fa-solid fa-circle-question"></i> Why It Matters?</h3>
+                            <p>It measures raw solar energy hitting each square meter of the landing site. High irradiance charges rover batteries rapidly, powers drills and science instruments, and runs internal survival heaters.</p>
+
+                        </div>
+                    </div>
+                </article>
+
+                <!-- 6. LUNAR DIURNAL TEMPERATURE RANGE (DUAL-LAYER TARGET GAUGE) -->
+                <article class="criteria-card">
+                    <div class="criteria-card-header">
+                        <div class="criteria-title-group">
+                            <i class="fa-solid fa-temperature-three-quarters criteria-icon"></i>
+                            <h2>6. Lunar Diurnal Temperature Range <span>(K)</span></h2>
+                        </div>
+                        <div class="criteria-meta-badges">
+                            <span class="target-zone-legend">
+                                <span class="target-swatch"></span> User Target: {{ report.scales.user_min_k }} K – {{ report.scales.user_max_k }} K
+                            </span>
+                            <span class="weight-tag">Weight: {{ report.weights.diurnal_temp }}%</span>
+                        </div>
+                    </div>
+                    <div class="criteria-body-grid">
+                        <div class="bars-column">
+                            {% for s in report.sites %}
+                            {% set m = s.metrics.diurnal_temp %}
+                            <div class="site-bar-row">
+                                <div class="bar-row-label">
+                                    <span class="site-tag tag-site-{{ s.site_num }}">Site {{ s.site_num }}</span>
+                                    <span class="row-coord">{{ s.display_id }}</span>
+                                    <span class="temp-status-pill {{ 'fit' if m.excess == 0 else 'exceed' }}">{{ m.status }}</span>
+                                </div>
+                                <div class="bar-row-visual">
+                                    <span class="axis-bound">0 K</span>
+                                    <div class="bar-track temp-dual-track">
+                                        <!-- Highlighted User Safe Temperature Band -->
+                                        <div class="user-target-zone"
+                                             style="left: {{ report.scales.user_temp_left_pct }}%; width: {{ report.scales.user_temp_width_pct }}%;"
+                                             title="Preferred User Range: {{ report.scales.user_min_k }} K to {{ report.scales.user_max_k }} K">
+                                        </div>
+                                        <!-- Floating Site Lunation Range Bar (Tmin to Tmax) -->
+                                        <div class="temp-range-pill range-site-{{ s.site_num }}"
+                                             style="left: {{ m.bar_left_pct }}%; width: {{ m.bar_width_pct }}%;">
+                                        </div>
+                                    </div>
+                                    <span class="axis-bound">{{ report.scales.temp_max_label }}</span>
+                                    <div class="bar-value-box wide">
+                                        <span class="metric-val">{{ m.display }}</span>
+                                        {% if m.has_crown %}
+                                        <i class="fa-solid fa-crown crown-icon" title="Highest Score in Criterion"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="why-column">
+                            <h3><i class="fa-solid fa-circle-question"></i> Why It Matters?</h3>
+                            <p>It shows the extreme coldest (night) and hottest (noon) surface temperatures across a full lunar cycle. The dashed cyan band shows your preferred thermal envelope—bars that stay completely inside avoid hardware overheating or cryogenic battery failure.</p>
+
+                        </div>
+                    </div>
+                </article>
+
+                <!-- 7. SLOPE ANGLE -->
+                <article class="criteria-card">
+                    <div class="criteria-card-header">
+                        <div class="criteria-title-group">
+                            <i class="fa-solid fa-mountain criteria-icon"></i>
+                            <h2>7. Terrain Slope Angle <span>(°)</span></h2>
+                        </div>
+                        <div class="criteria-meta-badges">
+                            <span class="threshold-tag">Full Mark: ≤ 5.00° (Lower is Better)</span>
+                            <span class="weight-tag">Weight: {{ report.weights.slope_angle }}%</span>
+                        </div>
+                    </div>
+                    <div class="criteria-body-grid">
+                        <div class="bars-column">
+                            {% for s in report.sites %}
+                            {% set m = s.metrics.slope %}
+                            <div class="site-bar-row">
+                                <div class="bar-row-label">
+                                    <span class="site-tag tag-site-{{ s.site_num }}">Site {{ s.site_num }}</span>
+                                    <span class="row-coord">{{ s.display_id }}</span>
+                                </div>
+                                <div class="bar-row-visual">
+                                    <span class="axis-bound">0°</span>
+                                    <div class="bar-track">
+                                        <div class="bar-fill fill-site-{{ s.site_num }}" style="width: {{ m.bar_pct }}%;"></div>
+                                    </div>
+                                    <span class="axis-bound">90°</span>
+                                    <div class="bar-value-box">
+                                        <span class="metric-val">{{ m.display }}</span>
+                                        {% if m.has_crown %}
+                                        <i class="fa-solid fa-crown crown-icon" title="Highest Score (Flattest Terrain)"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="why-column">
+                            <h3><i class="fa-solid fa-circle-question"></i> Why It Matters?</h3>
+                            <p>It measures how steep the ground is at the landing coordinates. Landers risk tipping over on slopes above 10°–15°, and rovers lose wheel traction in loose lunar regolith on steep crater walls (shorter bar = flatter, safer ground).</p>
+
+                        </div>
+                    </div>
+                </article>
+
+                <!-- 8. WATER ICE PROBABILITY -->
+                <article class="criteria-card">
+                    <div class="criteria-card-header">
+                        <div class="criteria-title-group">
+                            <i class="fa-solid fa-icicles criteria-icon"></i>
+                            <h2>8. Water Ice Probability <span>(Stability Index 0–1)</span></h2>
+                        </div>
+                        <div class="criteria-meta-badges">
+                            <span class="threshold-tag">Full Mark: 1.00</span>
+                            <span class="weight-tag">Weight: {{ report.weights.water_ice }}%</span>
+                        </div>
+                    </div>
+                    <div class="criteria-body-grid">
+                        <div class="bars-column">
+                            {% for s in report.sites %}
+                            {% set m = s.metrics.water_ice %}
+                            <div class="site-bar-row">
+                                <div class="bar-row-label">
+                                    <span class="site-tag tag-site-{{ s.site_num }}">Site {{ s.site_num }}</span>
+                                    <span class="row-coord">{{ s.display_id }}</span>
+                                </div>
+                                <div class="bar-row-visual">
+                                    <span class="axis-bound">0.00</span>
+                                    <div class="bar-track">
+                                        <div class="bar-fill fill-site-{{ s.site_num }}" style="width: {{ m.bar_pct }}%;"></div>
+                                    </div>
+                                    <span class="axis-bound">1.00</span>
+                                    <div class="bar-value-box">
+                                        <span class="metric-val">{{ m.display }}</span>
+                                        {% if m.has_crown %}
+                                        <i class="fa-solid fa-crown crown-icon" title="Highest Water Ice Stability"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="why-column">
+                            <h3><i class="fa-solid fa-circle-question"></i> Why It Matters?</h3>
+                            <p>It indicates the likelihood that subsurface water ice remains thermally stable without sublimating into space. Water ice is vital for scientific discovery and future In-Situ Resource Utilization (ISRU) to produce drinking water, oxygen, and rocket fuel.</p>
+
+                        </div>
+                    </div>
+                </article>
+
+            </section>
+        </div>
+
+        <!-- Bottom Action Row: Download Colourful PDF -->
+        <div class="pdf-download-footer">
+            <button type="button" id="download-pdf-btn" class="download-pdf-btn">
+                <i class="fa-solid fa-file-pdf"></i> DOWNLOAD COLOURFUL PDF REPORT
+            </button>
+        </div>
+    </main>
+
+    <script>
+        document.getElementById('download-pdf-btn')?.addEventListener('click', () => {
+            const btn = document.getElementById('download-pdf-btn');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> GENERATING COLOURFUL PDF...';
+            btn.disabled = true;
+
+            const element = document.getElementById('report-export-area');
+            const options = {
+                margin: [8, 8, 8, 8],
+                filename: 'Astropulse_Lunar_Feasibility_Report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#050b18',
+                    logging: false
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            html2pdf().set(options).from(element).save().then(() => {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+                document.body.style.overflow = ''; 
+            }).catch((err) => {
+                console.error('[Astropulse PDF Export Error]:', err);
+                alert('PDF generation failed. Please try exiting fullscreen mode (F11) first.');
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+                document.body.style.overflow = ''; 
+            });
+        });
+    </script>
+</body>
+</html>

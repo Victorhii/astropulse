@@ -1,0 +1,80 @@
+#star-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0; /* Changed from -1 so it sits above the dark body background */
+    pointer-events: none; /* Lets clicks pass through to your buttons */
+}
+
+/* Main Layout Centering */
+.comparison-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin-left: var(--sidebar-retracted); /* Respects the retracted menu width */
+    padding: 40px;
+    text-align: center;
+    position: relative;
+    z-index: 1; /* Keeps content above the stars */
+}
+
+/* Glassmorphism Content Card */
+.content-card {
+    background: rgba(16, 49, 92, 0.45); /* Uses your --nav-bg but transparent */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 60px 50px;
+    max-width: 850px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease;
+}
+
+.content-card h1 {
+    font-size: 3rem;
+    margin-top: 0;
+    margin-bottom: 24px;
+    color: var(--text-light);
+    letter-spacing: 1px;
+    text-shadow: 0 0 15px rgba(79, 179, 255, 0.3);
+}
+
+.content-card p {
+    font-size: 1.15rem;
+    line-height: 1.8;
+    color: var(--text-muted);
+    margin-bottom: 45px;
+}
+
+/* Attractive START Button */
+.start-btn {
+    background: linear-gradient(135deg, #4fb3ff, #10315c);
+    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    padding: 18px 60px;
+    border: none;
+    border-radius: 40px;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(79, 179, 255, 0.3);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.start-btn:hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 12px 35px rgba(79, 179, 255, 0.6);
+    background: linear-gradient(135deg, #64c2ff, #1e528f);
+}
+
+.start-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 5px 15px rgba(79, 179, 255, 0.4);
+}
