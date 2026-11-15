@@ -51,7 +51,7 @@ def get_time_from_api():
 TEXTURE_DIR = os.path.join(app.root_path, 'static', 'images')
 TEXTURE_PATH = os.path.join(TEXTURE_DIR, 'lunar_surface_8k.jpg')
 
-# Official NASA SVS LRO 8K Global Equirectangular Mosaic URL
+# Solar System Scope. Credit Solar System Scope under CC BY 4.0
 NASA_8K_TEXTURE_URL = "https://www.solarsystemscope.com/textures/download/8k_moon.jpg"
 
 @app.route('/')
@@ -343,14 +343,12 @@ def evaluate_and_rank_sites(raw_sites: list, user_min_k: float, user_max_k: floa
         # 1. Earth Elevation Angle (<= 0° -> 0, >= 75° -> 1.0)
         s_earth_elev = 0.0 if earth_elev <= 0.0 else min(1.0, earth_elev / FULL_MARK_EARTH_ELEV)
 
-        # 2. Duration before Earthset (N/A -> 0, >= 14d -> 1.0)
-        s_earthset = min(1.0, earthset_sec / FULL_MARK_DURATION_S) if (is_earthset and earthset_sec > 0) else 0.0
+        # (DELETE the duplicate s_earthset = ... line that was here)
 
         # 3. Solar Elevation Angle (<= 0° -> 0, >= 60° -> 1.0)
         s_solar_elev = 0.0 if solar_elev <= 0.0 else min(1.0, solar_elev / FULL_MARK_SOLAR_ELEV)
 
-        # 4. Duration before Sunset (N/A -> 0, >= 14d -> 1.0)
-        s_sunset = min(1.0, sunset_sec / FULL_MARK_DURATION_S) if (is_sunset and sunset_sec > 0) else 0.0
+        # (DELETE the duplicate s_sunset = ... line that was here)
 
         # 5. Solar Irradiance (>= 1000 W/m² -> 1.0)
         s_irradiance = min(1.0, irradiance / FULL_MARK_IRRADIANCE)
@@ -504,8 +502,8 @@ def evaluate_and_rank_sites(raw_sites: list, user_min_k: float, user_max_k: floa
         "sites": sites,                 # Ordered Site 1 -> Site 4 for bar charts
         "ranked_sites": ranked_sites,   # Ordered 1st -> 4th for standing podium
         "scales": {
-            "earthset_max_label": f"{earthset_max_label}d",
-            "sunset_max_label": f"{sunset_max_label}d",
+            "earthset_max_label": f"{earthset_max_label}",
+            "sunset_max_label": f"{sunset_max_label}",
             "irr_max_label": f"{irr_bar_max}",
             "temp_max_label": f"{temp_bar_max} K",
             "user_min_k": f"{user_min_k:.2f}",
